@@ -8,7 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN mkdir -p ../Micro1
+RUN mkdir -p ../task_API
 
 EXPOSE 6379
 

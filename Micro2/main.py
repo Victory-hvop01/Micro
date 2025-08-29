@@ -9,7 +9,7 @@ backend = os.environ.get('CELERY_BACKEND', 'redis://localhost:6379/0')
 celery = Celery("main", broker=broker, backend=backend)
 
 # Подключение к БД первого микросервиса
-DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///../Micro1/test.db')
+DATABASE_URL = os.environ.get('DATABASE_URL', 'sqlite:///../task_API/test.db')
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

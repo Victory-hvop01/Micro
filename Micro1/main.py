@@ -10,7 +10,7 @@ from starlette.templating import Jinja2Templates
 DATABASE_URL = "sqlite:///./test.db"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 
-templates = Jinja2Templates(directory="new")
+templates = Jinja2Templates(directory="template")
 app = FastAPI()
 new_session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

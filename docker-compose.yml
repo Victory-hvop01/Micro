@@ -9,28 +9,28 @@ services:
       - redis_data:/data
 
   micro1:
-    build: ./Micro1
+    build: ./task_API
     ports:
       - "8000:8000"
     volumes:
-      - ./Micro1:/app
-      - micro1_db:/app/data
+      - ./task_API:/app
+      - task_API_db:/app/data
     environment:
       - DATABASE_URL=sqlite:////app/data/test.db
 
   micro2:
-    build: ./Micro2
+    build: ./Celery_task
     depends_on:
       - redis
-      - micro1
+      - task_API
     volumes:
-      - ./Micro2:/app
-      - micro1_db:/app/../Micro1  # Общий доступ к БД первого микросервиса
+      - ./Celery_task:/app
+      - task_API_db:/app/../task_API  # Общий доступ к БД первого микросервиса
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - DATABASE_URL=sqlite:////app/../Micro1/test.db
+      - DATABASE_URL=sqlite:////app/../task_API/test.db
 
 volumes:
   redis_data:
-  micro1_db:
+  task_API_db:
