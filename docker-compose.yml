@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  micro1:
+    build: ./Micro1
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./Micro1:/app
+      - micro1_db:/app/data
+    environment:
+      - DATABASE_URL=sqlite:////app/data/test.db
+
+  micro2:
+    build: ./Micro2
+    depends_on:
+      - redis
+      - micro1
+    volumes:
+      - ./Micro2:/app
+      - micro1_db:/app/../Micro1  # Общий доступ к БД первого микросервиса
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - DATABASE_URL=sqlite:////app/../Micro1/test.db
+
+volumes:
+  redis_data:
+  micro1_db:
