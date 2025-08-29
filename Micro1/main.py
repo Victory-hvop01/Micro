@@ -7,7 +7,6 @@ import uvicorn
 from sqlalchemy import create_engine
 from starlette.templating import Jinja2Templates
 
-
 DATABASE_URL = "sqlite:///./test.db"
 engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
 
@@ -33,10 +32,10 @@ class TaskModel(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str]
     description: Mapped[str]
-    status: Mapped[str]
+    status:Mapped[str]
 
 
-# Base.metadata.drop_all(bind=engine)
+#Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)
 
 
@@ -46,7 +45,7 @@ async def read_form(request: Request):
 
 
 @app.post("/submit", tags=["Задачи"], summary="Запись задач")
-async def add_task(name: str = Form(), description: str = Form(), status: str = Form(), db: Session = Depends(get_session)):
+async def add_task(name: str = Form(), description: str = Form(), status: str=Form(), db: Session = Depends(get_session)):
     new_task = TaskModel(
         name=name,
         description=description,
@@ -54,16 +53,6 @@ async def add_task(name: str = Form(), description: str = Form(), status: str = 
     )
     db.add(new_task)
     db.commit()
-    '''connection = pika.BlockingConnection(pika.ConnectionParameters('localhost'))
-    channel = connection.channel()
-    channel.exchange_declare(exchange='task_notifications', exchange_type='fanout')
-
-    channel.basic_publish(
-        exchange='task_notifications',
-        routing_key='',
-        body=json.dumps({'action': 'new_task', 'task_id': new_task.id})
-    )
-    connection.close()'''
     return {"Статус": "Данные успешно добавлены"}
 
 
@@ -76,10 +65,10 @@ def get_task(session: SessionDep):
 
 @app.delete("/task/{id}", tags=["Задачи"], summary="Удаление задач")
 def del_task(id: int = TaskModel, db: Session = Depends(get_session)):
-    user = db.query(TaskModel).filter(TaskModel.id == id).first()
-    if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    db.delete(user)
+    task = db.query(TaskModel).filter(TaskModel.id == id).first()
+    if task is None:
+        raise HTTPException(status_code=404, detail="Task not found")
+    db.delete(task)
     db.commit()
     return {"messege": "ok"}
 
