@@ -1,0 +1,14 @@
+amqp==5.3.1
+annotated-types==0.7.0
+celery==5.5.3
+fastapi==0.116.1
+pydantic==2.11.7
+pydantic_core==2.33.2
+python-dateutil==2.9.0.post0
+redis==6.4.0
+SQLAlchemy==2.0.43
+starlette==0.47.3
+typing-inspection==0.4.1
+typing_extensions==4.15.0
+uvicorn==0.35.0
+
