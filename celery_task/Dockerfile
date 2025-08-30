@@ -8,7 +8,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN mkdir -p ../task_API
+RUN mkdir -p /app/external_db
+
+VOLUME /app/external_db
 
 EXPOSE 6379
 
