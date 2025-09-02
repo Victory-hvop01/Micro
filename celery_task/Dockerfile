@@ -12,6 +12,6 @@ RUN mkdir -p /app/external_db
 
 VOLUME /app/external_db
 
-EXPOSE 6379
+EXPOSE 6379 5672
 
-CMD ["celery", "-A", "main", "worker", "--beat", "--loglevel=info"]
+CMD ["python", "main.py"]
