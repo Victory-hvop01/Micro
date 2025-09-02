@@ -1,36 +1,90 @@
 version: '3.8'
 
 services:
+  # RabbitMQ сервер
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    networks:
+      - app-network
+
+  # Redis сервер для Celery
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
-    volumes:
-      - redis_data:/data
+    networks:
+      - app-network
 
-  micro1:
-    build: ./task_API
+  # Первый микросервис (FastAPI)
+  task-api:
+    build:
+      context: ./task_API  # путь к первому микросервису
     ports:
       - "8000:8000"
-    volumes:
-      - ./task_API:/app
-      - task_API_db:/app/data
     environment:
+      - RABBITMQ_URL=amqp://rabbitmq:5672/
       - DATABASE_URL=sqlite:////app/data/test.db
-
-  micro2:
-    build: ./Celery_task
-    depends_on:
-      - redis
-      - task_API
     volumes:
-      - ./Celery_task:/app
-      - task_API_db:/app/../task_API  # Общий доступ к БД первого микросервиса
+      - shared-data:/app/data
+      - ./task_API/template:/app/template  # монтируем шаблоны
+    networks:
+      - app-network
+    depends_on:
+      - rabbitmq
+    restart: unless-stopped
+
+  # Второй микросервис (обработчик RabbitMQ + Celery)
+  task-processor:
+    build:
+      context: ./task_processor  # путь ко второму микросервису
     environment:
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - DATABASE_URL=sqlite:////app/../task_API/test.db
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_QUEUE=task_queue
+      - DATABASE_URL=sqlite:////app/data/test.db
+      - CELERY_BROKER=redis://redis:6379/0
+      - CELERY_BACKEND=redis://redis:6379/0
+    volumes:
+      - shared-data:/app/data  # общая БД с первым микросервисом
+      - ./task_processor:/app  # монтируем код
+    networks:
+      - app-network
+    depends_on:
+      - rabbitmq
+      - redis
+      - task_api
+    restart: unless-stopped
+
+  # Celery worker для обработки долгих задач
+  celery-worker:
+    build:
+      context: ./task_processor  # тот же код, что и у task-processor
+    environment:
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_QUEUE=task_queue
+      - DATABASE_URL=sqlite:////app/data/test.db
+      - CELERY_BROKER=redis://redis:6379/0
+      - CELERY_BACKEND=redis://redis:6379/0
+    volumes:
+      - shared-data:/app/data  # общая БД
+      - ./task_processor:/app  # монтируем код
+    command: celery -A main.celery_app worker --loglevel=info
+    networks:
+      - app-network
+    depends_on:
+      - rabbitmq
+      - redis
+      - task_api
+    restart: unless-stopped
 
 volumes:
-  redis_data:
-  task_API_db:
+  shared-data:
+
+networks:
+  app-network:
+    driver: bridge
